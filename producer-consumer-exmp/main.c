@@ -49,9 +49,9 @@ int main(int argc, char *argv[])
         }
     }
 
-    for(i = 0; i<THREAD_NUM; i++){
-        if(pthread_join(&th[i],NULL) != 0){
-            perror("Failed to join threads!\n");
+    for(int i = 0; i<THREAD_NUM; i++){
+        if(pthread_join(th[i],NULL) != 0){
+        //
         }
     }
     return 0;
