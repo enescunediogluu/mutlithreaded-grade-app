@@ -61,7 +61,7 @@ void* process_student(void* arg) {
 }
 
 int main() {
-    FILE *input = fopen("./input1/input.txt", "r");
+    FILE *input = fopen("./input2/input.txt", "r");
     if (!input) {
         printf("Error opening input file\n");
         return 1;
@@ -101,7 +101,7 @@ int main() {
     }
     
     // Write results to output file
-    FILE *output = fopen("./input1/results1.txt", "w");
+    FILE *output = fopen("./input2/results1.txt", "w");
     if (!output) {
         printf("Error opening output file\n");
         return 1;
@@ -116,7 +116,7 @@ int main() {
     }
     
     // Write statistics
-    fprintf(output, "--- Overall Statistics ---\n");
+    fprintf(output, "\n--- Overall Statistics ---\n");
     fprintf(output, "Number of students passing each question:\n");
     for (int i = 0; i < stats.num_grades; i++) {
         fprintf(output, "Question %d: %d students passed.\n", 
