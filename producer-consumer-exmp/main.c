@@ -6,7 +6,7 @@
 #include <time.h>
 #include <semaphore.h>
 
-#define THREAD_NUM 8
+#define THREAD_NUM 3
 
 sem_t semEmpty;
 sem_t semFull;
