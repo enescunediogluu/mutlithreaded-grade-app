@@ -26,7 +26,7 @@ typedef struct {
     sem_t statsSemaphore;
 } OverallStats;
 
-OverallStats stats;
+OverallStats studentPerformance;
 
 void* processStudent(void* arg) {
     Student* student = (Student*)arg;
@@ -35,27 +35,27 @@ void* processStudent(void* arg) {
     for (int i = 0; i < student->numGrades; i++) {
         sum += student->grades[i];
         
-        sem_wait(&stats.statsSemaphore);
+        sem_wait(&studentPerformance.statsSemaphore);
         if (student->grades[i] >= PASS_THRESHOLD) {
-            stats.passingPerQuestion[i]++;
+            studentPerformance.passingPerQuestion[i]++;
         }
-        if (student->grades[i] > stats.highestGrade) {
-            stats.highestGrade = student->grades[i];
+        if (student->grades[i] > studentPerformance.highestGrade) {
+            studentPerformance.highestGrade = student->grades[i];
         }
-        if (student->grades[i] < stats.lowestGrade) {
-            stats.lowestGrade = student->grades[i];
+        if (student->grades[i] < studentPerformance.lowestGrade) {
+            studentPerformance.lowestGrade = student->grades[i];
         }
-        sem_post(&stats.statsSemaphore);
+        sem_post(&studentPerformance.statsSemaphore);
     }
     
     student->average = (double)sum / student->numGrades;
     student->passed = (student->average >= PASS_THRESHOLD);
     
-    sem_wait(&stats.statsSemaphore);
+    sem_wait(&studentPerformance.statsSemaphore);
     if (student->passed) {
-        stats.totalPassing++;
+        studentPerformance.totalPassing++;
     }
-    sem_post(&stats.statsSemaphore);
+    sem_post(&studentPerformance.statsSemaphore);
     
     return NULL;
 }
@@ -67,76 +67,70 @@ int main() {
         return 1;
     }
     
-    fscanf(input, "%d", &stats.numStudents);
-    fscanf(input, "%d", &stats.numGrades);
+    fscanf(input, "%d", &studentPerformance.numStudents);
+    fscanf(input, "%d", &studentPerformance.numGrades);
     
-    stats.students = malloc(stats.numStudents * sizeof(Student));
-    stats.passingPerQuestion = calloc(stats.numGrades, sizeof(int));
-    stats.highestGrade = 0;
-    stats.lowestGrade = 100;
-    stats.totalPassing = 0;
+    studentPerformance.students = malloc(studentPerformance.numStudents * sizeof(Student));
+    studentPerformance.passingPerQuestion = calloc(studentPerformance.numGrades, sizeof(int));
+    studentPerformance.highestGrade = 0;
+    studentPerformance.lowestGrade = 100;
+    studentPerformance.totalPassing = 0;
     
-    sem_init(&stats.statsSemaphore, 0, 1);
+    sem_init(&studentPerformance.statsSemaphore, 0, 1);
     
-    pthread_t* threads = malloc(stats.numStudents * sizeof(pthread_t));
+    pthread_t* threads = malloc(studentPerformance.numStudents * sizeof(pthread_t));
     
-    // Read student data and create threads
-    for (int i = 0; i < stats.numStudents; i++) {
-        stats.students[i].grades = malloc(stats.numGrades * sizeof(int));
-        stats.students[i].numGrades = stats.numGrades;
+    for (int i = 0; i < studentPerformance.numStudents; i++) {
+        studentPerformance.students[i].grades = malloc(studentPerformance.numGrades * sizeof(int));
+        studentPerformance.students[i].numGrades = studentPerformance.numGrades;
         
-        fscanf(input, "%d", &stats.students[i].id);
-        for (int j = 0; j < stats.numGrades; j++) {
-            fscanf(input, "%d", &stats.students[i].grades[j]);
+        fscanf(input, "%d", &studentPerformance.students[i].id);
+        for (int j = 0; j < studentPerformance.numGrades; j++) {
+            fscanf(input, "%d", &studentPerformance.students[i].grades[j]);
         }
         
-        pthread_create(&threads[i], NULL, processStudent, &stats.students[i]);
+        pthread_create(&threads[i], NULL, processStudent, &studentPerformance.students[i]);
     }
     
     fclose(input);
     
-    // Wait for all threads to complete
-    for (int i = 0; i < stats.numStudents; i++) {
+    for (int i = 0; i < studentPerformance.numStudents; i++) {
         pthread_join(threads[i], NULL);
     }
     
-    // Write results to output file
     FILE *output = fopen("./input2/results1.txt", "w");
     if (!output) {
         printf("Error opening output file\n");
         return 1;
     }
     
-    // Write individual results
-    for (int i = 0; i < stats.numStudents; i++) {
+    for (int i = 0; i < studentPerformance.numStudents; i++) {
         fprintf(output, "%d %.2f %s\n", 
-                stats.students[i].id,
-                stats.students[i].average,
-                stats.students[i].passed ? "Passed" : "Failed");
+                studentPerformance.students[i].id,
+                studentPerformance.students[i].average,
+                studentPerformance.students[i].passed ? "Passed" : "Failed");
     }
     
-    // Write statistics
     fprintf(output, "\n--- Overall Statistics ---\n");
     fprintf(output, "Number of students passing each question:\n");
-    for (int i = 0; i < stats.numGrades; i++) {
+    for (int i = 0; i < studentPerformance.numGrades; i++) {
         fprintf(output, "Question %d: %d students passed.\n", 
-                i + 1, stats.passingPerQuestion[i]);
+                i + 1, studentPerformance.passingPerQuestion[i]);
     }
     
     fprintf(output, "Total number of students who passed overall: %d\n", 
-            stats.totalPassing);
-    fprintf(output, "Highest grade: %d\n", stats.highestGrade);
-    fprintf(output, "Lowest grade: %d\n", stats.lowestGrade);
+            studentPerformance.totalPassing);
+    fprintf(output, "Highest grade: %d\n", studentPerformance.highestGrade);
+    fprintf(output, "Lowest grade: %d\n", studentPerformance.lowestGrade);
     
     fclose(output);
     
-    // Cleanup
-    sem_destroy(&stats.statsSemaphore);
-    for (int i = 0; i < stats.numStudents; i++) {
-        free(stats.students[i].grades);
+    sem_destroy(&studentPerformance.statsSemaphore);
+    for (int i = 0; i < studentPerformance.numStudents; i++) {
+        free(studentPerformance.students[i].grades);
     }
-    free(stats.students);
-    free(stats.passingPerQuestion);
+    free(studentPerformance.students);
+    free(studentPerformance.passingPerQuestion);
     free(threads);
     
     return 0;
