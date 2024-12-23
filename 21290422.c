@@ -4,7 +4,7 @@
 #include <semaphore.h>
 #include <string.h>
 
-#define PASS_THRESHOLD 60
+#define MINIMUM_PASS_GRADE 60
 #define MAX_GRADES 100
 
 typedef struct {
@@ -36,7 +36,7 @@ void* processStudent(void* arg) {
         sum += student->grades[i];
         
         sem_wait(&studentStatistics.statsSemaphore);
-        if (student->grades[i] >= PASS_THRESHOLD) {
+        if (student->grades[i] >= MINIMUM_PASS_GRADE) {
             studentStatistics.passingPerQuestion[i]++;
         }
         if (student->grades[i] > studentStatistics.highestGrade) {
@@ -49,7 +49,7 @@ void* processStudent(void* arg) {
     }
     
     student->average = (double)sum / student->numGrades;
-    student->passed = (student->average >= PASS_THRESHOLD);
+    student->passed = (student->average >= MINIMUM_PASS_GRADE);
     
     sem_wait(&studentStatistics.statsSemaphore);
     if (student->passed) {
@@ -61,10 +61,10 @@ void* processStudent(void* arg) {
 }
 
 int main() {
-    FILE *input = fopen("./input2/input.txt", "r");
-    if (!input) {
-        printf("Error opening input file\n");
-        return 1;
+    FILE *input = fopen("input.txt", "r");
+    if (input == NULL) {
+        perror("Error opening input file");
+        return EXIT_FAILURE;
     }
     
     fscanf(input, "%d", &studentStatistics.numStudents);
@@ -98,7 +98,7 @@ int main() {
         pthread_join(threads[i], NULL);
     }
     
-    FILE *output = fopen("./input2/results1.txt", "w");
+    FILE *output = fopen("results.txt", "w");
     if (!output) {
         printf("Error opening output file\n");
         return 1;
